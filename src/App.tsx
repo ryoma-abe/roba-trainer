@@ -44,19 +44,26 @@ export default function App() {
     return m > 0 ? Math.round(state.correct / m) : 0
   }, [state.started, now, state.correct])
 
-  // 現在ステップに対応する指
-  const activeFinger: FingerCode | null = useMemo(() => {
+  // 現在ステップ＋入力途中から、次に押すキー・指・ヒントを導出
+  const view = useMemo(() => {
+    const empty = { nextPos: [] as number[], heldPos: null as number | null, finger: null as FingerCode | null, hint: '' }
     const s = currentStep
-    if (!s) return null
-    if (s.t === 'char') return fingerOf(charToPos[s.v]) ?? null
-    if (s.pos.length) return fingerOf(s.pos[s.pos.length - 1]) ?? null
-    return null
-  }, [currentStep])
+    if (!s || state.finished) return empty
+    if (s.t === 'kana') {
+      const repr = s.romaji.find((r) => r.startsWith(state.typed)) ?? s.romaji[0]
+      const ch = repr[state.typed.length]
+      const p = ch !== undefined ? charToPos[ch] : undefined
+      if (p === undefined) return empty
+      return { nextPos: [p], heldPos: null, finger: fingerOf(p) ?? null, hint: '' }
+    }
+    const last = s.pos[s.pos.length - 1]
+    return { nextPos: s.pos, heldPos: s.mod ?? null, finger: fingerOf(last) ?? null, hint: s.hint ?? '' }
+  }, [currentStep, state.typed, state.finished])
 
   // 現在ステップが要求するレイヤー（自動追従の対象）
   const autoLayer = useMemo(() => {
     const s = currentStep
-    if (!s || state.finished) return 'base'
+    if (!s || state.finished || s.t === 'kana') return 'base'
     if (s.mod === 39) return 'arrow'
     if (s.mod === 38) return 'num'
     if (s.mod === 37) return 'bt'
@@ -144,20 +151,16 @@ export default function App() {
         <Prompt
           item={state.cur}
           si={state.si}
+          typed={state.typed}
           errFlash={state.errFlash}
-          hint={currentStep?.hint ?? ''}
+          hint={view.hint}
         />
       ) : null}
 
-      <FingerGuide active={state.finished ? null : activeFinger} />
+      <FingerGuide active={view.finger} />
 
       <div className="board-wrap">
-        <Board
-          mode="drill"
-          scale={0.86}
-          nextPos={state.finished ? [] : currentStep?.pos}
-          heldPos={state.finished ? null : currentStep?.mod ?? null}
-        />
+        <Board mode="drill" scale={0.86} nextPos={view.nextPos} heldPos={view.heldPos} />
       </div>
       <div className="handlabel-row" style={{ maxWidth: 660, margin: '4px auto 0', width: '100%' }}>
         <span>左 / エンコーダ側</span>

@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react'
-import type { Item } from '../types'
+import type { Item, Step } from '../types'
 
 interface Props {
   item: Item
   si: number
+  typed: string
   errFlash: number
   hint: string
 }
 
-export function Prompt({ item, si, errFlash, hint }: Props) {
+function reprOf(s: Step, typed: string, isCur: boolean): string {
+  if (s.t !== 'kana') return s.show
+  if (isCur) return s.romaji.find((r) => r.startsWith(typed)) ?? s.romaji[0]
+  return s.romaji[0]
+}
+
+export function Prompt({ item, si, typed, errFlash, hint }: Props) {
   const [flashing, setFlashing] = useState(false)
 
   useEffect(() => {
@@ -25,15 +32,23 @@ export function Prompt({ item, si, errFlash, hint }: Props) {
       </div>
       <div className="romaji">
         {item.steps.map((s, i) => {
+          const isCur = i === si
+          const repr = reprOf(s, typed, isCur)
           const cls = ['ch']
           if (i < si) cls.push('done')
-          else if (i === si) {
+          else if (isCur) {
             cls.push('cur')
             if (flashing) cls.push('err')
           }
-          return (
-            <span key={i} className={cls.join(' ')}>{s.show}</span>
-          )
+          if (isCur && s.t === 'kana' && typed) {
+            return (
+              <span key={i} className={cls.join(' ')}>
+                <span className="typed">{repr.slice(0, typed.length)}</span>
+                {repr.slice(typed.length)}
+              </span>
+            )
+          }
+          return <span key={i} className={cls.join(' ')}>{repr}</span>
         })}
       </div>
       <div className="step-hint">{hint}</div>

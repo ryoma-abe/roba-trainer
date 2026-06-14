@@ -1,15 +1,14 @@
 import type { Item, Stage, Step } from '../types'
-import { charToPos } from './keyboard'
+import { tokenizeKana } from './romaji'
 
-export function charSteps(rom: string): Step[] {
-  return rom.split('').map((c) => {
-    if (c === ' ') return { t: 'key', v: ' ', show: '␣', pos: [38], hint: 'スペース（親指）' }
-    return { t: 'char', v: c, show: c, pos: [charToPos[c]] }
-  })
+/** かな文字列を入力ステップ列へ。複数のローマ字表記を許容する。 */
+export function kanaSteps(kana: string): Step[] {
+  return tokenizeKana(kana).map((u) => ({ t: 'kana', display: u.display, romaji: u.romaji }))
 }
 
+/** [kana, _] のリストから Item を生成（ローマ字はかなから自動生成） */
 function lex(list: [string, string][]): Item[] {
-  return list.map((it) => ({ kana: it[0], steps: charSteps(it[1]) }))
+  return list.map((it) => ({ kana: it[0], steps: kanaSteps(it[0]) }))
 }
 
 const homeKeys = ['f', 'j', 'd', 'k', 's', 'l', 'a', "'"]
@@ -163,7 +162,7 @@ const clickItems: Item[] = [
 
 const sentenceItems: Item[] = sentences.map((s) => ({
   kana: s[0],
-  steps: charSteps(s[1]).concat([{ t: 'key', v: 'Enter', show: '⏎', pos: [41], hint: '最後に Enter で確定' }]),
+  steps: kanaSteps(s[0]).concat([{ t: 'key', v: 'Enter', show: '⏎', pos: [41], hint: '最後に Enter で確定' }]),
 }))
 
 export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences'
@@ -177,7 +176,7 @@ export const STAGES: Record<StageId, Stage> = {
   home: {
     name: 'ホーム', sub: '指の位置',
     desc: 'ホームポジション。表示キーを押して、見ずに指を置けるように。右小指のホームは「\u0027」。',
-    items: () => homeKeys.map((c) => ({ kana: '', steps: [{ t: 'char', v: c, show: c, pos: [charToPos[c]] }] })),
+    items: () => homeKeys.map((c) => ({ kana: '', steps: [{ t: 'kana', display: c, romaji: [c] }] })),
   },
   vowels: {
     name: '母音', sub: 'a i u e o',
@@ -186,7 +185,7 @@ export const STAGES: Record<StageId, Stage> = {
   },
   gojuon: {
     name: '五十音', sub: 'ka ki ku…',
-    desc: '五十音。し=shi, ち=chi, つ=tsu, ふ=fu, ん=nn。',
+    desc: '五十音。複数の打ち方OK（つ=tsu/tu/thu, し=shi/si, ち=chi/ti, ふ=fu/hu, じ=ji/zi）。ん=nn。',
     items: () => lex(gojuon),
   },
   words: {

@@ -26,6 +26,8 @@ export interface DrillState {
   queue: Item[]
   cur: Item | null
   si: number
+  /** 現在のかなステップで入力済みのローマ字（複数キーかな用） */
+  typed: string
   completed: number
   correct: number
   errors: number
@@ -54,7 +56,7 @@ function startSession(stageId: StageId, shuffleOn: boolean, mode: DrillMode): Dr
   const queue = refillQueue(pool, shuffleOn, startStage)
   const cur = queue.shift() ?? null
   return {
-    stageId: startStage, mode, rotIndex: 0, shuffleOn, pool, queue, cur, si: 0,
+    stageId: startStage, mode, rotIndex: 0, shuffleOn, pool, queue, cur, si: 0, typed: '',
     completed: 0, correct: 0, errors: 0, started: null, stoppedAt: null, finished: false, errFlash: 0,
   }
 }
@@ -103,23 +105,45 @@ function reducer(state: DrillState, action: Action): DrillState {
       const s = curStep(state)
       if (!s) return state
       const tok = action.tok
-      let ok = false
-      if (s.t === 'char') ok = tok.char === s.v
-      else if (s.t === 'key') ok = tok.key === s.v
-      else if (s.t === 'click') ok = tok.click === s.v
+      const miss = () => ({ ...state, errors: state.errors + 1, errFlash: state.errFlash + 1 })
 
-      if (!ok) {
-        return { ...state, errors: state.errors + 1, errFlash: state.errFlash + 1 }
+      // かなステップ：複数ローマ字候補のいずれかに前方一致すれば進行
+      if (s.t === 'kana') {
+        if (tok.char === undefined) return miss()
+        const cand = state.typed + tok.char
+        const matches = s.romaji.filter((r) => r.startsWith(cand))
+        if (matches.length === 0) return miss()
+
+        const started = state.started ?? Date.now()
+        const correct = state.correct + 1
+        const complete = s.romaji.includes(cand) && !matches.some((r) => r.length > cand.length)
+        if (!complete) {
+          // まだ途中（次のキーを待つ）
+          return { ...state, started, correct, typed: cand }
+        }
+        // このかな確定 → 次ステップ／次の問題へ
+        const si = state.si + 1
+        if (si >= state.cur.steps.length) {
+          const next = advance(state)
+          return { ...state, started, correct, si: 0, typed: '', completed: state.completed + 1, ...next }
+        }
+        return { ...state, started, correct, si, typed: '' }
       }
+
+      // 単キー操作（特殊キー・クリック）
+      let ok = false
+      if (s.t === 'key') ok = tok.key === s.v
+      else if (s.t === 'click') ok = tok.click === s.v
+      if (!ok) return miss()
 
       const started = state.started ?? Date.now()
       const correct = state.correct + 1
       const si = state.si + 1
       if (si >= state.cur.steps.length) {
         const next = advance(state)
-        return { ...state, started, correct, si: 0, completed: state.completed + 1, ...next }
+        return { ...state, started, correct, si: 0, typed: '', completed: state.completed + 1, ...next }
       }
-      return { ...state, started, correct, si }
+      return { ...state, started, correct, si, typed: '' }
     }
 
     default:

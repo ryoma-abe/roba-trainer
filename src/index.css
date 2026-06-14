@@ -222,6 +222,10 @@ h1 .mono {
   animation: shake 0.18s;
 }
 
+.romaji .ch .typed {
+  opacity: 0.5;
+}
+
 .step-hint {
   color: var(--accent);
   font-size: 13px;

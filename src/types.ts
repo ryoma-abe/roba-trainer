@@ -3,11 +3,19 @@ export type FingerCode =
   | 'RI' | 'RM' | 'RR' | 'RP'
   | 'LT' | 'RT'
 
-export type StepKind = 'char' | 'key' | 'click'
+/** かな入力単位：複数キー・複数ローマ字候補を許容する（例: つ = tsu / tu / thu） */
+export interface KanaStep {
+  t: 'kana'
+  /** プロンプトに出すかな（拗音・促音含む） */
+  display: string
+  /** 受理するローマ字候補（いずれかで打てる） */
+  romaji: string[]
+}
 
-export interface Step {
-  t: StepKind
-  /** 正解として比較する値（char: 文字 / key: KeyboardEvent.key / click: ボタン種別） */
+/** 単キー操作（特殊キー・クリック）。1ストロークで判定。 */
+export interface ActionStep {
+  t: 'key' | 'click'
+  /** 正解として比較する値（key: KeyboardEvent.key / click: ボタン種別） */
   v: string
   /** プロンプト上の表示文字 */
   show: string
@@ -18,6 +26,8 @@ export interface Step {
   /** 補足の一言ヒント */
   hint?: string
 }
+
+export type Step = KanaStep | ActionStep
 
 export interface Item {
   kana: string
