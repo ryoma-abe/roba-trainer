@@ -3,16 +3,23 @@ import { Board } from './Board'
 
 interface Props {
   layerKey: string
-  onSelect: (key: string) => void
+  onSelect: (key: string | null) => void
+  /** 練習に自動追従中か（手動選択していない状態） */
+  autoFollowing: boolean
 }
 
 const LAYER_KEYS = Object.keys(LAYERS)
 
-export function Keymap({ layerKey, onSelect }: Props) {
+export function Keymap({ layerKey, onSelect, autoFollowing }: Props) {
   const layer = LAYERS[layerKey]
   return (
     <>
-      <div className="section-title"><span className="bar-i" />キーマップ全体（全レイヤー）</div>
+      <div className="section-title">
+        <span className="bar-i" />キーマップ全体（全レイヤー）
+        {autoFollowing
+          ? <span className="auto-badge">練習に自動追従中</span>
+          : <button className="auto-badge auto-badge-btn" onClick={() => onSelect(null)}>自動追従に戻す</button>}
+      </div>
       <div className="fk-tabs">
         {LAYER_KEYS.map((k) => (
           <button

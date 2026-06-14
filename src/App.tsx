@@ -3,18 +3,27 @@ import { useDrill } from './hooks/useDrill'
 import { STAGES, STAGE_ORDER, type StageId } from './data/stages'
 import { FCOL, FJP, charToPos, fingerOf } from './data/keyboard'
 import type { FingerCode } from './types'
+import { addRecord, clearRecords, loadRecords, type SessionRecord } from './data/records'
 import { Board } from './components/Board'
 import { FingerGuide } from './components/FingerGuide'
 import { Stats } from './components/Stats'
 import { Prompt } from './components/Prompt'
 import { DoneCard } from './components/DoneCard'
 import { Keymap } from './components/Keymap'
+import { History } from './components/History'
 
 const LEGEND_FINGERS: FingerCode[] = ['LP', 'LR', 'LM', 'LI', 'RI', 'RM', 'RR', 'RP', 'LT']
 
 export default function App() {
   const { state, currentStep, newSession, setShuffle, stop } = useDrill('home')
-  const [layerKey, setLayerKey] = useState('base')
+
+  // 全体キーマップ：練習に自動追従（manualLayer があればそれを優先）
+  const [manualLayer, setManualLayer] = useState<string | null>(null)
+  // コース／モードが変わったら自動追従に戻す
+  useEffect(() => { setManualLayer(null) }, [state.stageId, state.mode])
+
+  // 成績記録
+  const [records, setRecords] = useState<SessionRecord[]>(() => loadRecords())
 
   // 速度表示用の時計（計測中だけ動かす）
   const [now, setNow] = useState(() => Date.now())
@@ -44,8 +53,47 @@ export default function App() {
     return null
   }, [currentStep])
 
+  // 現在ステップが要求するレイヤー（自動追従の対象）
+  const autoLayer = useMemo(() => {
+    const s = currentStep
+    if (!s || state.finished) return 'base'
+    if (s.mod === 39) return 'arrow'
+    if (s.mod === 38) return 'num'
+    if (s.mod === 37) return 'bt'
+    if (s.t === 'click') return 'mouse'
+    return 'base'
+  }, [currentStep, state.finished])
+
+  const shownLayer = manualLayer ?? autoLayer
+
   const doneSeconds = state.started && state.stoppedAt ? (state.stoppedAt - state.started) / 1000 : 0
   const doneCpm = doneSeconds > 0 ? Math.round(state.correct / (doneSeconds / 60)) : 0
+
+  function persistAndStop() {
+    if (state.started) {
+      const sec = (Date.now() - state.started) / 1000
+      const next = addRecord({
+        ts: Date.now(),
+        label: state.mode === 'rotation' ? '毎朝ローテ' : STAGES[state.stageId].name,
+        mode: state.mode,
+        completed: state.completed,
+        accuracy,
+        cpm: sec > 0 ? Math.round(state.correct / (sec / 60)) : 0,
+        errors: state.errors,
+        seconds: sec,
+      })
+      setRecords(next)
+    }
+    stop()
+  }
+
+  function handleClearRecords() {
+    if (!window.confirm('成績の記録をすべて消去します。よろしいですか？')) return
+    clearRecords()
+    setRecords([])
+  }
+
+  const isRotation = state.mode === 'rotation'
 
   return (
     <div className="wrap">
@@ -54,22 +102,33 @@ export default function App() {
         <span className="sub">実機配列・無限モード</span>
       </header>
       <p className="note">
-        打つのは<b>表示された操作</b>。次に押すキーが<b>実機どおりの配列図</b>で光り、使う<b>指</b>が手の図に出ます。矢印・クリック・文章なども、実機でその操作をすれば判定されます。<b>やめる</b>を押すまで続きます。
+        打つのは<b>表示された操作</b>。次に押すキーが<b>実機どおりの配列図</b>で光り、使う<b>指</b>が手の図に出ます。下のキーマップは<b>いま練習しているレイヤーに自動で切り替わります</b>。<b>やめる</b>を押すまで続き、やめると成績が記録されます。
       </p>
 
       <div className="stages">
         {STAGE_ORDER.map((id: StageId) => (
           <button
             key={id}
-            className={'stage' + (id === state.stageId ? ' active' : '')}
-            onClick={() => newSession(id)}
+            className={'stage' + (!isRotation && id === state.stageId ? ' active' : '')}
+            onClick={() => newSession(id, 'single')}
           >
             {STAGES[id].name}
             <small>{STAGES[id].sub}</small>
           </button>
         ))}
+        <button
+          className={'stage' + (isRotation ? ' active' : '')}
+          onClick={() => newSession(undefined, 'rotation')}
+        >
+          🌅 毎朝モード
+          <small>全コース巡回</small>
+        </button>
       </div>
-      <p className="desc">{STAGES[state.stageId].desc}</p>
+      <p className="desc">
+        {isRotation
+          ? `毎朝モード：全コースを自動で巡回します。今は「${STAGES[state.stageId].name}」。`
+          : STAGES[state.stageId].desc}
+      </p>
 
       <Stats completed={state.completed} accuracy={accuracy} cpm={cpm} errors={state.errors} />
 
@@ -115,8 +174,8 @@ export default function App() {
       </div>
 
       <div className="bar">
-        <button className="btn stop" onClick={stop}>やめる</button>
-        <button className="btn" onClick={() => newSession()}>最初から</button>
+        <button className="btn stop" onClick={persistAndStop}>やめる</button>
+        <button className="btn" onClick={() => newSession(state.stageId, state.mode)}>最初から</button>
         <label className="chk">
           <input type="checkbox" checked={state.shuffleOn} onChange={(e) => setShuffle(e.target.checked)} />
           ランダム順
@@ -126,7 +185,9 @@ export default function App() {
         </span>
       </div>
 
-      <Keymap layerKey={layerKey} onSelect={setLayerKey} />
+      <Keymap layerKey={shownLayer} onSelect={setManualLayer} autoFollowing={manualLayer === null} />
+
+      <History records={records} onClear={handleClearRecords} />
     </div>
   )
 }

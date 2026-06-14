@@ -533,6 +533,130 @@ label.chk {
   font-family: var(--mono);
 }
 
+.auto-badge {
+  font-size: 11px;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-left: auto;
+}
+
+.auto-badge-btn {
+  color: var(--dim);
+  border-color: var(--line);
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.auto-badge-btn:hover {
+  color: var(--ink);
+  border-color: #3a4350;
+}
+
+.hist-summary {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 14px;
+  flex-wrap: wrap;
+}
+
+.hist-badge {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 10px 18px;
+}
+
+.hist-badge .k {
+  font-size: 11px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hist-badge .v {
+  font-family: var(--mono);
+  font-size: 22px;
+  margin-top: 3px;
+}
+
+.hist-badge .v small {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.hist-charts {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.hist-chart {
+  flex: 1;
+  min-width: 240px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.hist-chart-h {
+  font-size: 12px;
+  color: var(--dim);
+  margin-bottom: 4px;
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.hist-empty {
+  color: var(--faint);
+  font-size: 12px;
+  padding: 18px 0;
+  text-align: center;
+}
+
+.hist-table-wrap {
+  overflow-x: auto;
+}
+
+.hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.hist-table th,
+.hist-table td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.hist-table th {
+  color: var(--dim);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hist-table td {
+  font-family: var(--mono);
+}
+
+.hist-table td:nth-child(2) {
+  font-family: var(--sans);
+  color: var(--dim);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

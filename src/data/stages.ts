@@ -34,18 +34,109 @@ const gojuon: [string, string][] = [
 ]
 
 const words: [string, string][] = [
-  ['ねこ', 'neko'], ['いぬ', 'inu'], ['あめ', 'ame'], ['そら', 'sora'], ['やま', 'yama'],
-  ['みず', 'mizu'], ['はな', 'hana'], ['うみ', 'umi'], ['とり', 'tori'], ['ほし', 'hoshi'],
-  ['くるま', 'kuruma'], ['さかな', 'sakana'], ['たまご', 'tamago'], ['かわ', 'kawa'], ['でんわ', 'denwa'],
-  ['にほんご', 'nihongo'], ['よろしく', 'yoroshiku'], ['おはよう', 'ohayou'], ['ありがとう', 'arigatou'], ['こんにちは', 'konnichiha'],
+  // 動物
+  ['ねこ', 'neko'], ['いぬ', 'inu'], ['とり', 'tori'], ['うま', 'uma'], ['うし', 'ushi'],
+  ['ぶた', 'buta'], ['さる', 'saru'], ['くま', 'kuma'], ['きつね', 'kitsune'], ['たぬき', 'tanuki'],
+  ['ねずみ', 'nezumi'], ['うさぎ', 'usagi'], ['かえる', 'kaeru'], ['へび', 'hebi'], ['かめ', 'kame'],
+  ['くじら', 'kujira'], ['いるか', 'iruka'], ['ぞう', 'zou'], ['きりん', 'kirinn'], ['らいおん', 'raionn'],
+  ['ぱんだ', 'pannda'], ['こあら', 'koara'], ['ぺんぎん', 'pennginn'], ['はち', 'hachi'], ['さかな', 'sakana'],
+  // 自然
+  ['そら', 'sora'], ['うみ', 'umi'], ['やま', 'yama'], ['かわ', 'kawa'], ['もり', 'mori'],
+  ['はな', 'hana'], ['くさ', 'kusa'], ['いし', 'ishi'], ['つき', 'tsuki'], ['ほし', 'hoshi'],
+  ['たいよう', 'taiyou'], ['くも', 'kumo'], ['あめ', 'ame'], ['ゆき', 'yuki'], ['かぜ', 'kaze'],
+  ['にじ', 'niji'], ['みず', 'mizu'], ['ひかり', 'hikari'], ['かみなり', 'kaminari'], ['たき', 'taki'],
+  ['いずみ', 'izumi'], ['はやし', 'hayashi'], ['しま', 'shima'], ['みなと', 'minato'],
+  // 食べ物
+  ['ごはん', 'gohann'], ['やさい', 'yasai'], ['くだもの', 'kudamono'], ['りんご', 'rinngo'], ['みかん', 'mikann'],
+  ['いちご', 'ichigo'], ['ぶどう', 'budou'], ['すいか', 'suika'], ['たまご', 'tamago'], ['にく', 'niku'],
+  ['こめ', 'kome'], ['しお', 'shio'], ['さとう', 'satou'], ['おちゃ', 'ocha'], ['すし', 'sushi'],
+  ['そば', 'soba'], ['うどん', 'udonn'], ['みそ', 'miso'], ['なっとう', 'nattou'], ['とうふ', 'toufu'],
+  ['おにぎり', 'onigiri'], ['からあげ', 'karaage'], ['だんご', 'danngo'], ['せんべい', 'sennbei'],
+  // 体
+  ['あたま', 'atama'], ['かお', 'kao'], ['め', 'me'], ['みみ', 'mimi'], ['くち', 'kuchi'],
+  ['て', 'te'], ['あし', 'ashi'], ['ゆび', 'yubi'], ['かみ', 'kami'], ['はら', 'hara'],
+  ['かた', 'kata'], ['ひざ', 'hiza'], ['ほね', 'hone'], ['こえ', 'koe'],
+  // 生活
+  ['いえ', 'ie'], ['へや', 'heya'], ['まど', 'mado'], ['つくえ', 'tsukue'], ['いす', 'isu'],
+  ['でんわ', 'dennwa'], ['てれび', 'terebi'], ['とけい', 'tokei'], ['かぎ', 'kagi'], ['かさ', 'kasa'],
+  ['かばん', 'kabann'], ['くつ', 'kutsu'], ['ぼうし', 'boushi'], ['ふく', 'fuku'], ['ほん', 'honn'],
+  ['えんぴつ', 'ennpitsu'], ['けしごむ', 'keshigomu'], ['はさみ', 'hasami'], ['こっぷ', 'koppu'], ['さら', 'sara'],
+  ['はし', 'hashi'], ['たおる', 'taoru'], ['せっけん', 'sekkenn'],
+  // 乗り物・場所
+  ['くるま', 'kuruma'], ['でんしゃ', 'dennsha'], ['じてんしゃ', 'jitennsha'], ['ばす', 'basu'], ['ひこうき', 'hikouki'],
+  ['ふね', 'fune'], ['えき', 'eki'], ['みち', 'michi'], ['こうえん', 'kouenn'], ['がっこう', 'gakkou'],
+  ['びょういん', 'byouinn'], ['みせ', 'mise'], ['ぎんこう', 'ginnkou'], ['としょかん', 'toshokann'], ['こうばん', 'koubann'],
+  ['くうこう', 'kuukou'], ['しんごう', 'shinngou'], ['まち', 'machi'], ['むら', 'mura'],
+  // 時間・天気
+  ['あさ', 'asa'], ['ひる', 'hiru'], ['よる', 'yoru'], ['いま', 'ima'], ['きょう', 'kyou'],
+  ['あした', 'ashita'], ['きのう', 'kinou'], ['はる', 'haru'], ['なつ', 'natsu'], ['あき', 'aki'],
+  ['ふゆ', 'fuyu'], ['じかん', 'jikann'], ['てんき', 'tennki'], ['はれ', 'hare'], ['くもり', 'kumori'],
+  // 動作・気持ち・あいさつ
+  ['あるく', 'aruku'], ['はしる', 'hashiru'], ['たべる', 'taberu'], ['のむ', 'nomu'], ['みる', 'miru'],
+  ['きく', 'kiku'], ['はなす', 'hanasu'], ['よむ', 'yomu'], ['かく', 'kaku'], ['ねる', 'neru'],
+  ['おきる', 'okiru'], ['わらう', 'warau'], ['なく', 'naku'], ['あそぶ', 'asobu'], ['うれしい', 'ureshii'],
+  ['たのしい', 'tanoshii'], ['かなしい', 'kanashii'], ['おいしい', 'oishii'], ['おはよう', 'ohayou'], ['ありがとう', 'arigatou'],
+  ['にほんご', 'nihonngo'], ['よろしく', 'yoroshiku'],
+  // 色・数・形
+  ['あか', 'aka'], ['あお', 'ao'], ['きいろ', 'kiiro'], ['みどり', 'midori'], ['しろ', 'shiro'],
+  ['くろ', 'kuro'], ['ちゃいろ', 'chairo'], ['むらさき', 'murasaki'], ['ひとつ', 'hitotsu'], ['ふたつ', 'futatsu'],
+  ['みっつ', 'mittsu'], ['よっつ', 'yottsu'], ['いつつ', 'itsutsu'], ['なまえ', 'namae'], ['いろ', 'iro'],
+  ['かたち', 'katachi'], ['まる', 'maru'], ['さんかく', 'sannkaku'], ['しかく', 'shikaku'], ['おおきい', 'ookii'],
+  ['ちいさい', 'chiisai'], ['たかい', 'takai'], ['ひくい', 'hikui'], ['あたらしい', 'atarashii'], ['ふるい', 'furui'],
+  ['はやい', 'hayai'], ['おそい', 'osoi'], ['あつい', 'atsui'], ['さむい', 'samui'],
 ]
 
 const sentences: [string, string][] = [
-  ['きょうはいいてんきですね', 'kyou wa ii tenki desu ne'],
-  ['ごはんをたべました', 'gohan wo tabemashita'],
+  ['きょうはいいてんきですね', 'kyou wa ii tennki desu ne'],
+  ['ごはんをたべました', 'gohann wo tabemashita'],
   ['しごとがおわった', 'shigoto ga owatta'],
-  ['あしたもがんばろう', 'ashita mo ganbarou'],
+  ['あしたもがんばろう', 'ashita mo gannbarou'],
   ['キーボードはたのしい', 'kiiboodo wa tanoshii'],
+  ['まいにちれんしゅうする', 'mainichi rennshuu suru'],
+  ['ねこがにわにいる', 'neko ga niwa ni iru'],
+  ['ともだちとあそぶ', 'tomodachi to asobu'],
+  ['ほんをよむのがすきだ', 'honn wo yomu no ga suki da'],
+  ['あめがふってきた', 'ame ga futte kita'],
+  ['でんしゃにのりおくれた', 'dennsha ni noriokureta'],
+  ['おなかがすいたな', 'onaka ga suita na'],
+  ['はやくねたほうがいい', 'hayaku neta hou ga ii'],
+  ['みずをのみたい', 'mizu wo nomitai'],
+  ['こうえんをさんぽする', 'kouenn wo sannpo suru'],
+  ['てがみをかいた', 'tegami wo kaita'],
+  ['おんがくをきく', 'onngaku wo kiku'],
+  ['えいがをみにいく', 'eiga wo mi ni iku'],
+  ['りょうりをつくる', 'ryouri wo tsukuru'],
+  ['そうじをしなくちゃ', 'souji wo shinakucha'],
+  ['なつやすみがたのしみ', 'natsuyasumi ga tanoshimi'],
+  ['ゆきがふっている', 'yuki ga futte iru'],
+  ['はなびがきれいだ', 'hanabi ga kirei da'],
+  ['あさはやくおきた', 'asa hayaku okita'],
+  ['しゅくだいがおわらない', 'shukudai ga owaranai'],
+  ['コーヒーをのむ', 'koohii wo nomu'],
+  ['でんわをかける', 'dennwa wo kakeru'],
+  ['かいものにいく', 'kaimono ni iku'],
+  ['にもつがおもい', 'nimotsu ga omoi'],
+  ['みちにまよった', 'michi ni mayotta'],
+  ['しゃしんをとる', 'shashinn wo toru'],
+  ['くるまをうんてんする', 'kuruma wo unntenn suru'],
+  ['やまにのぼりたい', 'yama ni noboritai'],
+  ['うみでおよいだ', 'umi de oyoida'],
+  ['とりがそらをとぶ', 'tori ga sora wo tobu'],
+  ['はるになるとさくらがさく', 'haru ni naru to sakura ga saku'],
+  ['げんきをだそう', 'gennki wo dasou'],
+  ['ありがとうございます', 'arigatou gozaimasu'],
+  ['よろしくおねがいします', 'yoroshiku onegai shimasu'],
+  ['おはようございます', 'ohayou gozaimasu'],
+  ['いってきます', 'ittekimasu'],
+  ['ただいまかえりました', 'tadaima kaerimashita'],
+  ['おつかれさまでした', 'otsukaresama deshita'],
+  ['きょうもいちにちがんばった', 'kyou mo ichinichi gannbatta'],
+  ['あたらしいことをはじめる', 'atarashii koto wo hajimeru'],
+  ['ゆっくりやすんでね', 'yukkuri yasunnde ne'],
+  ['たのしいいちにちだった', 'tanoshii ichinichi datta'],
+  ['ねむくなってきた', 'nemuku natte kita'],
+  ['そろそろねよう', 'sorosoro neyou'],
+  ['またあした', 'mata ashita'],
 ]
 
 const editItems: Item[] = [
@@ -78,6 +169,9 @@ const sentenceItems: Item[] = sentences.map((s) => ({
 export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences'
 
 export const STAGE_ORDER: StageId[] = ['home', 'vowels', 'gojuon', 'words', 'edit', 'arrows', 'clicks', 'sentences']
+
+/** 毎朝モード（連続ローテーション）で自動的に巡回するコース順。ホームは除外。 */
+export const ROTATION_ORDER: StageId[] = ['vowels', 'gojuon', 'words', 'edit', 'arrows', 'clicks', 'sentences']
 
 export const STAGES: Record<StageId, Stage> = {
   home: {

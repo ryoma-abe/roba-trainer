@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { Item, Step, Token } from '../types'
-import { STAGES, type StageId } from '../data/stages'
+import { ROTATION_ORDER, STAGES, type StageId } from '../data/stages'
+
+export type DrillMode = 'single' | 'rotation'
 
 function shuffle<T>(a: T[]): T[] {
   a = a.slice()
@@ -15,6 +17,10 @@ function shuffle<T>(a: T[]): T[] {
 
 export interface DrillState {
   stageId: StageId
+  /** single: 単一コース無限 / rotation: 全コースを自動で巡回（毎朝モード） */
+  mode: DrillMode
+  /** rotation 時、ROTATION_ORDER 内の現在位置 */
+  rotIndex: number
   shuffleOn: boolean
   pool: Item[]
   queue: Item[]
@@ -32,7 +38,7 @@ export interface DrillState {
 }
 
 type Action =
-  | { type: 'newSession'; stageId?: StageId }
+  | { type: 'newSession'; stageId?: StageId; mode?: DrillMode }
   | { type: 'setShuffle'; on: boolean }
   | { type: 'token'; tok: Token }
   | { type: 'stop' }
@@ -42,22 +48,35 @@ function refillQueue(pool: Item[], shuffleOn: boolean, stageId: StageId): Item[]
   return shuffleOn || stageId === 'home' ? shuffle(a) : a
 }
 
-function startSession(stageId: StageId, shuffleOn: boolean): DrillState {
-  const pool = STAGES[stageId].items()
-  const queue = refillQueue(pool, shuffleOn, stageId)
+function startSession(stageId: StageId, shuffleOn: boolean, mode: DrillMode): DrillState {
+  const startStage = mode === 'rotation' ? ROTATION_ORDER[0] : stageId
+  const pool = STAGES[startStage].items()
+  const queue = refillQueue(pool, shuffleOn, startStage)
   const cur = queue.shift() ?? null
   return {
-    stageId, shuffleOn, pool, queue, cur, si: 0,
+    stageId: startStage, mode, rotIndex: 0, shuffleOn, pool, queue, cur, si: 0,
     completed: 0, correct: 0, errors: 0, started: null, stoppedAt: null, finished: false, errFlash: 0,
   }
 }
 
-function nextItem(state: DrillState): { cur: Item | null; queue: Item[] } {
-  let queue = state.queue
-  if (!queue.length) queue = refillQueue(state.pool, state.shuffleOn, state.stageId)
-  else queue = queue.slice()
+/** 次の問題へ。キューが空なら、single は同コースを補充、rotation は次コースへ自動で進む。 */
+function advance(state: DrillState): Pick<DrillState, 'cur' | 'queue' | 'pool' | 'stageId' | 'rotIndex'> {
+  if (state.queue.length) {
+    const queue = state.queue.slice()
+    const cur = queue.shift() ?? null
+    return { cur, queue, pool: state.pool, stageId: state.stageId, rotIndex: state.rotIndex }
+  }
+  if (state.mode === 'rotation') {
+    const rotIndex = (state.rotIndex + 1) % ROTATION_ORDER.length
+    const stageId = ROTATION_ORDER[rotIndex]
+    const pool = STAGES[stageId].items()
+    const queue = refillQueue(pool, state.shuffleOn, stageId)
+    const cur = queue.shift() ?? null
+    return { cur, queue, pool, stageId, rotIndex }
+  }
+  const queue = refillQueue(state.pool, state.shuffleOn, state.stageId)
   const cur = queue.shift() ?? null
-  return { cur, queue }
+  return { cur, queue, pool: state.pool, stageId: state.stageId, rotIndex: state.rotIndex }
 }
 
 function curStep(state: DrillState): Step | null {
@@ -67,7 +86,7 @@ function curStep(state: DrillState): Step | null {
 function reducer(state: DrillState, action: Action): DrillState {
   switch (action.type) {
     case 'newSession':
-      return startSession(action.stageId ?? state.stageId, state.shuffleOn)
+      return startSession(action.stageId ?? state.stageId, state.shuffleOn, action.mode ?? 'single')
 
     case 'setShuffle': {
       // 残り問題のみ再シャッフル（原実装の refill 相当）
@@ -97,8 +116,8 @@ function reducer(state: DrillState, action: Action): DrillState {
       const correct = state.correct + 1
       const si = state.si + 1
       if (si >= state.cur.steps.length) {
-        const { cur, queue } = nextItem(state)
-        return { ...state, started, correct, si: 0, completed: state.completed + 1, cur, queue }
+        const next = advance(state)
+        return { ...state, started, correct, si: 0, completed: state.completed + 1, ...next }
       }
       return { ...state, started, correct, si }
     }
@@ -109,13 +128,16 @@ function reducer(state: DrillState, action: Action): DrillState {
 }
 
 export function useDrill(initialStage: StageId) {
-  const [state, dispatch] = useReducer(reducer, initialStage, (id) => startSession(id, true))
+  const [state, dispatch] = useReducer(reducer, initialStage, (id) => startSession(id, true, 'single'))
 
   // 入力ハンドラから最新 state を参照するための ref
   const stateRef = useRef(state)
   stateRef.current = state
 
-  const newSession = useCallback((stageId?: StageId) => dispatch({ type: 'newSession', stageId }), [])
+  const newSession = useCallback(
+    (stageId?: StageId, mode?: DrillMode) => dispatch({ type: 'newSession', stageId, mode }),
+    [],
+  )
   const setShuffle = useCallback((on: boolean) => dispatch({ type: 'setShuffle', on }), [])
   const stop = useCallback(() => dispatch({ type: 'stop' }), [])
   const sendToken = useCallback((tok: Token) => dispatch({ type: 'token', tok }), [])
