@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { Layer } from '../types'
-import { POS, W, H, BASE, fingerOf } from '../data/keyboard'
+import { POS, W, H, BASE, LAYERS, fingerOf } from '../data/keyboard'
 
 interface CommonProps {
   scale: number
@@ -10,6 +10,8 @@ interface DrillProps extends CommonProps {
   mode: 'drill'
   nextPos?: number[]
   heldPos?: number | null
+  /** 練習盤面に重ねるレイヤー（base 以外なら刻印を差し替え） */
+  layerKey?: string
 }
 
 interface RefProps extends CommonProps {
@@ -41,14 +43,24 @@ export function Board(props: Props) {
         if (c[2]) style.transform = `rotate(${c[2]}deg)`
 
         if (props.mode === 'drill') {
-          const lab = BASE[i]
-          const isL = ALPHA.test(lab)
+          const overlay = props.layerKey && props.layerKey !== 'base' ? LAYERS[props.layerKey] : null
+          const isHeld = props.heldPos === i
+          let lab: string
+          let dim: boolean
+          if (overlay && !isHeld) {
+            // 保持キー（修飾キー）はベース刻印のままにして分かりやすく見せる
+            lab = overlay.lab[i] !== undefined ? overlay.lab[i] : '·'
+            dim = lab === '·'
+          } else {
+            lab = BASE[i]
+            dim = !overlay && !ALPHA.test(lab)
+          }
           const classes = ['kc']
-          if (!isL) classes.push('dim')
+          if (dim) classes.push('dim')
           if (props.nextPos?.includes(i)) classes.push('next')
-          if (props.heldPos === i) classes.push('held')
+          if (isHeld) classes.push('held')
           return (
-            <div key={i} className={classes.join(' ')} style={style} data-pos={i} data-char={isL ? lab : undefined}>
+            <div key={i} className={classes.join(' ')} style={style} data-pos={i}>
               <span>{lab}</span>
             </div>
           )

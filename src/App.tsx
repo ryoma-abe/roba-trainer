@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useDrill } from './hooks/useDrill'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { DAILY_LIMIT, useDrill } from './hooks/useDrill'
 import { STAGES, STAGE_ORDER, type StageId } from './data/stages'
 import { FCOL, FJP, charToPos, fingerOf } from './data/keyboard'
 import type { FingerCode } from './types'
@@ -76,23 +76,26 @@ export default function App() {
   const doneSeconds = state.started && state.stoppedAt ? (state.stoppedAt - state.started) / 1000 : 0
   const doneCpm = doneSeconds > 0 ? Math.round(state.correct / (doneSeconds / 60)) : 0
 
-  function persistAndStop() {
-    if (state.started) {
-      const sec = (Date.now() - state.started) / 1000
-      const next = addRecord({
-        ts: Date.now(),
-        label: state.mode === 'rotation' ? '毎朝ローテ' : STAGES[state.stageId].name,
-        mode: state.mode,
-        completed: state.completed,
-        accuracy,
-        cpm: sec > 0 ? Math.round(state.correct / (sec / 60)) : 0,
-        errors: state.errors,
-        seconds: sec,
-      })
-      setRecords(next)
-    }
-    stop()
-  }
+  // セッション終了（やめる／毎朝モードの自動停止）を検知して成績を1回だけ保存
+  const savedRef = useRef(false)
+  useEffect(() => {
+    if (!state.finished) { savedRef.current = false; return }
+    if (savedRef.current || !state.started) return
+    savedRef.current = true
+    const sec = state.stoppedAt && state.started ? (state.stoppedAt - state.started) / 1000 : 0
+    const tot = state.correct + state.errors
+    const next = addRecord({
+      ts: state.stoppedAt ?? Date.now(),
+      label: state.mode === 'rotation' ? '毎朝ローテ' : STAGES[state.stageId].name,
+      mode: state.mode,
+      completed: state.completed,
+      accuracy: tot ? Math.round((state.correct / tot) * 100) : 100,
+      cpm: sec > 0 ? Math.round(state.correct / (sec / 60)) : 0,
+      errors: state.errors,
+      seconds: sec,
+    })
+    setRecords(next)
+  }, [state.finished, state.started, state.stoppedAt, state.completed, state.correct, state.errors, state.mode, state.stageId])
 
   function handleClearRecords() {
     if (!window.confirm('成績の記録をすべて消去します。よろしいですか？')) return
@@ -133,7 +136,7 @@ export default function App() {
       </div>
       <p className="desc">
         {isRotation
-          ? `毎朝モード：全コースを自動で巡回します。今は「${STAGES[state.stageId].name}」。`
+          ? `毎朝モード：全コースを巡回し、合計 ${DAILY_LIMIT} 問で自動終了。今は「${STAGES[state.stageId].name}」（${Math.min(state.completed, DAILY_LIMIT)}/${DAILY_LIMIT} 問）。`
           : STAGES[state.stageId].desc}
       </p>
 
@@ -160,7 +163,7 @@ export default function App() {
       <FingerGuide active={view.finger} />
 
       <div className="board-wrap">
-        <Board mode="drill" scale={0.86} nextPos={view.nextPos} heldPos={view.heldPos} />
+        <Board mode="drill" scale={0.86} nextPos={view.nextPos} heldPos={view.heldPos} layerKey={autoLayer} />
       </div>
       <div className="handlabel-row" style={{ maxWidth: 660, margin: '4px auto 0', width: '100%' }}>
         <span>左 / エンコーダ側</span>
@@ -177,7 +180,7 @@ export default function App() {
       </div>
 
       <div className="bar">
-        <button className="btn stop" onClick={persistAndStop}>やめる</button>
+        <button className="btn stop" onClick={stop}>やめる</button>
         <button className="btn" onClick={() => newSession(state.stageId, state.mode)}>最初から</button>
         <label className="chk">
           <input type="checkbox" checked={state.shuffleOn} onChange={(e) => setShuffle(e.target.checked)} />

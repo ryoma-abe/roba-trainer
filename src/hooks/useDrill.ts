@@ -4,6 +4,11 @@ import { ROTATION_ORDER, STAGES, type StageId } from '../data/stages'
 
 export type DrillMode = 'single' | 'rotation'
 
+/** 毎朝モードはこの問題数に達したら自動で停止する */
+export const DAILY_LIMIT = 30
+/** 毎朝モードで1コースを連続出題する問題数（これを超えるか問題が尽きたら次コースへ） */
+const ROTATION_CHUNK = 5
+
 function shuffle<T>(a: T[]): T[] {
   a = a.slice()
   for (let i = a.length - 1; i > 0; i--) {
@@ -21,6 +26,8 @@ export interface DrillState {
   mode: DrillMode
   /** rotation 時、ROTATION_ORDER 内の現在位置 */
   rotIndex: number
+  /** rotation 時、現在コースで連続出題した問題数 */
+  courseCount: number
   shuffleOn: boolean
   pool: Item[]
   queue: Item[]
@@ -56,33 +63,50 @@ function startSession(stageId: StageId, shuffleOn: boolean, mode: DrillMode): Dr
   const queue = refillQueue(pool, shuffleOn, startStage)
   const cur = queue.shift() ?? null
   return {
-    stageId: startStage, mode, rotIndex: 0, shuffleOn, pool, queue, cur, si: 0, typed: '',
+    stageId: startStage, mode, rotIndex: 0, courseCount: 0, shuffleOn, pool, queue, cur, si: 0, typed: '',
     completed: 0, correct: 0, errors: 0, started: null, stoppedAt: null, finished: false, errFlash: 0,
   }
 }
 
-/** 次の問題へ。キューが空なら、single は同コースを補充、rotation は次コースへ自動で進む。 */
-function advance(state: DrillState): Pick<DrillState, 'cur' | 'queue' | 'pool' | 'stageId' | 'rotIndex'> {
-  if (state.queue.length) {
-    const queue = state.queue.slice()
-    const cur = queue.shift() ?? null
-    return { cur, queue, pool: state.pool, stageId: state.stageId, rotIndex: state.rotIndex }
-  }
-  if (state.mode === 'rotation') {
-    const rotIndex = (state.rotIndex + 1) % ROTATION_ORDER.length
-    const stageId = ROTATION_ORDER[rotIndex]
-    const pool = STAGES[stageId].items()
-    const queue = refillQueue(pool, state.shuffleOn, stageId)
-    const cur = queue.shift() ?? null
-    return { cur, queue, pool, stageId, rotIndex }
-  }
-  const queue = refillQueue(state.pool, state.shuffleOn, state.stageId)
+type AdvanceResult = Pick<DrillState, 'cur' | 'queue' | 'pool' | 'stageId' | 'rotIndex' | 'courseCount'>
+
+/** 同コース内で次の問題へ（キューが空なら同コースを補充） */
+function nextInCourse(state: DrillState): AdvanceResult {
+  const queue = state.queue.length ? state.queue.slice() : refillQueue(state.pool, state.shuffleOn, state.stageId)
   const cur = queue.shift() ?? null
-  return { cur, queue, pool: state.pool, stageId: state.stageId, rotIndex: state.rotIndex }
+  return { cur, queue, pool: state.pool, stageId: state.stageId, rotIndex: state.rotIndex, courseCount: state.courseCount + 1 }
+}
+
+/** 次のコースへ進む（毎朝モード） */
+function nextCourse(state: DrillState): AdvanceResult {
+  const rotIndex = (state.rotIndex + 1) % ROTATION_ORDER.length
+  const stageId = ROTATION_ORDER[rotIndex]
+  const pool = STAGES[stageId].items()
+  const queue = refillQueue(pool, state.shuffleOn, stageId)
+  const cur = queue.shift() ?? null
+  return { cur, queue, pool, stageId, rotIndex, courseCount: 0 }
+}
+
+/** 次の問題を決める。single は同コース無限、rotation は数問ごとにコースを巡回。 */
+function advance(state: DrillState): AdvanceResult {
+  if (state.mode !== 'rotation') return nextInCourse(state)
+  // 規定数こなした or 問題が尽きたら次コースへ
+  if (state.courseCount + 1 >= ROTATION_CHUNK || state.queue.length === 0) return nextCourse(state)
+  return nextInCourse(state)
 }
 
 function curStep(state: DrillState): Step | null {
   return state.cur ? state.cur.steps[state.si] : null
+}
+
+/** 1問完了時の共通処理。毎朝モードで上限に達したら自動停止する。 */
+function finishItem(state: DrillState, base: Partial<DrillState>): DrillState {
+  const completed = state.completed + 1
+  if (state.mode === 'rotation' && completed >= DAILY_LIMIT) {
+    return { ...state, ...base, si: 0, typed: '', completed, finished: true, stoppedAt: Date.now() }
+  }
+  const next = advance(state)
+  return { ...state, ...base, si: 0, typed: '', completed, ...next }
 }
 
 function reducer(state: DrillState, action: Action): DrillState {
@@ -124,8 +148,7 @@ function reducer(state: DrillState, action: Action): DrillState {
         // このかな確定 → 次ステップ／次の問題へ
         const si = state.si + 1
         if (si >= state.cur.steps.length) {
-          const next = advance(state)
-          return { ...state, started, correct, si: 0, typed: '', completed: state.completed + 1, ...next }
+          return finishItem(state, { started, correct })
         }
         return { ...state, started, correct, si, typed: '' }
       }
@@ -140,8 +163,7 @@ function reducer(state: DrillState, action: Action): DrillState {
       const correct = state.correct + 1
       const si = state.si + 1
       if (si >= state.cur.steps.length) {
-        const next = advance(state)
-        return { ...state, started, correct, si: 0, typed: '', completed: state.completed + 1, ...next }
+        return finishItem(state, { started, correct })
       }
       return { ...state, started, correct, si, typed: '' }
     }
