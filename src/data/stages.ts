@@ -1,5 +1,6 @@
 import type { Item, Stage, Step } from '../types'
 import { tokenizeKana } from './romaji'
+import { charToPos } from './keyboard'
 
 /** かな文字列を入力ステップ列へ。複数のローマ字表記を許容する。 */
 export function kanaSteps(kana: string): Step[] {
@@ -165,12 +166,31 @@ const sentenceItems: Item[] = sentences.map((s) => ({
   steps: kanaSteps(s[0]).concat([{ t: 'key', v: 'Enter', show: '⏎', pos: [41], hint: '最後に Enter で確定' }]),
 }))
 
-export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences'
+// 大文字（Shift = z 長押し）。Shift を押しながら各文字。
+const shiftLetters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'z', 'x', 'c', 'v', 'b', 'n', 'm']
+const shiftItems: Item[] = shiftLetters.map((c) => {
+  const up = c.toUpperCase()
+  return { kana: up, steps: [{ t: 'key', v: up, show: up, pos: [charToPos[c]], mod: 22, hint: `Shift（z 長押し）+ ${up}` }] }
+})
 
-export const STAGE_ORDER: StageId[] = ['home', 'vowels', 'gojuon', 'words', 'edit', 'arrows', 'clicks', 'sentences']
+// 数字・記号（Space 長押しの数字レイヤー）。pos は num レイヤーの配置に対応。
+const symbolList: [string, number][] = [
+  ['1', 23], ['2', 24], ['3', 25], ['4', 11], ['5', 12], ['6', 13], ['7', 1], ['8', 2], ['9', 3], ['0', 22],
+  ['!', 17], ['@', 18], ['#', 19], ['$', 20], ['%', 21], ['&', 6], ['(', 8], [')', 9],
+  ['-', 0], ['+', 4], ['*', 14], ['/', 10], ['=', 27], ['.', 26], ['_', 16],
+  ['[', 29], [']', 30], ['{', 31], ['}', 32],
+]
+const symbolItems: Item[] = symbolList.map(([ch, pos]) => ({
+  kana: ch,
+  steps: [{ t: 'key', v: ch, show: ch, pos: [pos], mod: 38, hint: `Space 長押し + ${ch}` }],
+}))
+
+export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences' | 'shift' | 'symbols'
+
+export const STAGE_ORDER: StageId[] = ['home', 'vowels', 'gojuon', 'words', 'shift', 'symbols', 'edit', 'arrows', 'clicks', 'sentences']
 
 /** 毎朝モード（連続ローテーション）で自動的に巡回するコース順。ホームは除外。 */
-export const ROTATION_ORDER: StageId[] = ['vowels', 'gojuon', 'words', 'edit', 'arrows', 'clicks', 'sentences']
+export const ROTATION_ORDER: StageId[] = ['vowels', 'gojuon', 'words', 'shift', 'symbols', 'edit', 'arrows', 'clicks', 'sentences']
 
 export const STAGES: Record<StageId, Stage> = {
   home: {
@@ -207,6 +227,16 @@ export const STAGES: Record<StageId, Stage> = {
     name: 'クリック', sub: '左右中',
     desc: 'クリック。トラックボールを少し動かしてから J=左 K=中 L=右。マウスで反応します。',
     items: () => clickItems.slice(),
+  },
+  shift: {
+    name: 'シフト', sub: '大文字',
+    desc: '大文字（Shift）。z を長押ししながら文字キー。実機で大文字を打つと判定されます。',
+    items: () => shiftItems.slice(),
+  },
+  symbols: {
+    name: '記号・数字', sub: '0-9 !@#',
+    desc: '数字・記号。Space を長押し中の数字レイヤー。表示の記号を実機で打つと判定されます。',
+    items: () => symbolItems.slice(),
   },
   sentences: {
     name: '文章', sub: '実戦',

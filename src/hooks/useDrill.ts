@@ -194,9 +194,10 @@ export function useDrill(initialStage: StageId) {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       const k = e.key
       if (k.length === 1) {
-        const lc = k.toLowerCase()
-        if (/[a-z']/.test(lc)) { e.preventDefault(); sendToken({ char: lc }); return }
-        if (k === ' ') { e.preventDefault(); sendToken({ key: ' ' }); return }
+        // 小文字 a-z, ' はかな入力（char）。大文字・数字・記号・スペースは単キー（key）。
+        if (/[a-z']/.test(k)) { e.preventDefault(); sendToken({ char: k }); return }
+        e.preventDefault()
+        sendToken({ key: k })
         return
       }
       if (k === 'Tab') { e.preventDefault(); return }
