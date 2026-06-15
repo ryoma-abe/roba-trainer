@@ -5,7 +5,7 @@ import { ROTATION_ORDER, STAGES, type StageId } from '../data/stages'
 export type DrillMode = 'single' | 'rotation'
 
 /** 毎朝モードはこの問題数に達したら自動で停止する */
-export const DAILY_LIMIT = 30
+export const DAILY_LIMIT = 90
 /** 毎朝モードで1コースを連続出題する問題数（これを超えるか問題が尽きたら次コースへ） */
 const ROTATION_CHUNK = 5
 

@@ -1,10 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { SessionRecord } from '../data/records'
 import { currentStreak } from '../data/records'
+import { type GitHubConfig, isConfigured } from '../data/github'
 
 interface Props {
   records: SessionRecord[]
   onClear: () => void
+  ghConfig: GitHubConfig
+  onSaveGhConfig: (cfg: GitHubConfig) => void
+  onSyncNow: () => void
+  syncStatus: string
 }
 
 const SPARK_W = 280
@@ -35,7 +40,7 @@ function Sparkline({ values, color, max }: { values: number[]; color: string; ma
   )
 }
 
-export function History({ records, onClear }: Props) {
+export function History({ records, onClear, ghConfig, onSaveGhConfig, onSyncNow, syncStatus }: Props) {
   const recent = useMemo(() => records.slice(-30), [records])
   const accVals = recent.map((r) => r.accuracy)
   const cpmVals = recent.map((r) => r.cpm)
@@ -98,6 +103,48 @@ export function History({ records, onClear }: Props) {
           </div>
         </>
       )}
+
+      <GitHubPanel ghConfig={ghConfig} onSave={onSaveGhConfig} onSyncNow={onSyncNow} syncStatus={syncStatus} />
     </>
+  )
+}
+
+function GitHubPanel({
+  ghConfig, onSave, onSyncNow, syncStatus,
+}: {
+  ghConfig: GitHubConfig
+  onSave: (cfg: GitHubConfig) => void
+  onSyncNow: () => void
+  syncStatus: string
+}) {
+  const [form, setForm] = useState<GitHubConfig>(ghConfig)
+  const linked = isConfigured(ghConfig)
+  const set = (k: keyof GitHubConfig) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  return (
+    <details className="gh-panel" open={!linked}>
+      <summary>
+        リポジトリに保存（GitHub連携）
+        <span className={'gh-state' + (linked ? ' on' : '')}>{linked ? '連携中' : '未連携'}</span>
+      </summary>
+      <p className="gh-note">
+        成績を自分の GitHub リポジトリへ自動コミットします。トークンは<b>このブラウザにのみ保存</b>され、コードや公開先には含まれません。
+        <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noreferrer">fine-grained PAT</a>
+        で対象リポジトリの <b>Contents: Read and write</b> のみ許可するのが安全です。成績を公開したくない場合は<b>プライベートリポジトリ</b>を使ってください。
+      </p>
+      <div className="gh-form">
+        <label>Token<input type="password" value={form.token} onChange={set('token')} placeholder="github_pat_..." autoComplete="off" /></label>
+        <label>Owner<input value={form.owner} onChange={set('owner')} placeholder="ryoma-abe" /></label>
+        <label>Repo<input value={form.repo} onChange={set('repo')} placeholder="roba-records" /></label>
+        <label>Path<input value={form.path} onChange={set('path')} placeholder="roba-records.json" /></label>
+        <label>Branch<input value={form.branch} onChange={set('branch')} placeholder="main" /></label>
+      </div>
+      <div className="bar">
+        <button className="btn" onClick={() => onSave(form)}>連携を保存</button>
+        <button className="btn" onClick={onSyncNow} disabled={!isConfigured(form)}>今すぐ同期</button>
+        {syncStatus ? <span className="sub" style={{ marginLeft: 'auto' }}>{syncStatus}</span> : null}
+      </div>
+    </details>
   )
 }

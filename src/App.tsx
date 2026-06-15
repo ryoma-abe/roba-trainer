@@ -4,6 +4,7 @@ import { STAGES, STAGE_ORDER, type StageId } from './data/stages'
 import { FCOL, FJP, charToPos, fingerOf } from './data/keyboard'
 import type { FingerCode } from './types'
 import { addRecord, clearRecords, loadRecords, type SessionRecord } from './data/records'
+import { type GitHubConfig, isConfigured, loadConfig, saveConfig, syncRecords } from './data/github'
 import { Board } from './components/Board'
 import { FingerGuide } from './components/FingerGuide'
 import { Stats } from './components/Stats'
@@ -24,6 +25,34 @@ export default function App() {
 
   // 成績記録
   const [records, setRecords] = useState<SessionRecord[]>(() => loadRecords())
+
+  // GitHub リポジトリ連携
+  const [ghConfig, setGhConfig] = useState<GitHubConfig>(() => loadConfig())
+  const [syncStatus, setSyncStatus] = useState('')
+
+  const handleSaveGhConfig = (cfg: GitHubConfig) => {
+    setGhConfig(cfg)
+    saveConfig(cfg)
+  }
+
+  const doSync = async (local: SessionRecord[], cfg = ghConfig) => {
+    if (!isConfigured(cfg)) return
+    setSyncStatus('同期中…')
+    try {
+      const merged = await syncRecords(cfg, local)
+      localStorage.setItem('roba-trainer:records', JSON.stringify(merged.slice(-500)))
+      setRecords(merged)
+      setSyncStatus(`同期済み（${merged.length}件）`)
+    } catch (e) {
+      setSyncStatus(e instanceof Error ? e.message : '同期に失敗しました')
+    }
+  }
+
+  // 起動時：連携済みならリモートと突き合わせて取り込む
+  useEffect(() => {
+    if (isConfigured(ghConfig)) void doSync(loadRecords())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 速度表示用の時計（計測中だけ動かす）
   const [now, setNow] = useState(() => Date.now())
@@ -95,6 +124,8 @@ export default function App() {
       seconds: sec,
     })
     setRecords(next)
+    // 連携済みなら成績をリポジトリへ自動コミット
+    if (isConfigured(ghConfig)) void doSync(next)
   }, [state.finished, state.started, state.stoppedAt, state.completed, state.correct, state.errors, state.mode, state.stageId])
 
   function handleClearRecords() {
@@ -110,6 +141,7 @@ export default function App() {
       <header>
         <h1><span className="mono">roBa</span> 練習ドリル</h1>
         <span className="sub">実機配列・無限モード</span>
+        <a className="rec-link" href="#history">📊 記録を見る</a>
       </header>
       <p className="note">
         打つのは<b>表示された操作</b>。次に押すキーが<b>実機どおりの配列図</b>で光り、使う<b>指</b>が手の図に出ます。下のキーマップは<b>いま練習しているレイヤーに自動で切り替わります</b>。<b>やめる</b>を押すまで続き、やめると成績が記録されます。
@@ -193,7 +225,16 @@ export default function App() {
 
       <Keymap layerKey={shownLayer} onSelect={setManualLayer} autoFollowing={manualLayer === null} />
 
-      <History records={records} onClear={handleClearRecords} />
+      <div id="history">
+        <History
+          records={records}
+          onClear={handleClearRecords}
+          ghConfig={ghConfig}
+          onSaveGhConfig={handleSaveGhConfig}
+          onSyncNow={() => doSync(records)}
+          syncStatus={syncStatus}
+        />
+      </div>
     </div>
   )
 }
