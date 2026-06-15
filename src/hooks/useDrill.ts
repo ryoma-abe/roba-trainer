@@ -4,10 +4,10 @@ import { ROTATION_ORDER, STAGES, type StageId } from '../data/stages'
 
 export type DrillMode = 'single' | 'rotation'
 
-/** 毎朝モードはこの問題数に達したら自動で停止する */
-export const DAILY_LIMIT = 90
-/** 毎朝モードで1コースを連続出題する問題数（これを超えるか問題が尽きたら次コースへ） */
-const ROTATION_CHUNK = 5
+/** 毎朝モードで各コースを出題する問題数（均等割り） */
+export const PER_COURSE = 10
+/** 毎朝モードの総問題数（全コースを1パス） */
+export const DAILY_TOTAL = ROTATION_ORDER.length * PER_COURSE
 
 function shuffle<T>(a: T[]): T[] {
   a = a.slice()
@@ -77,9 +77,9 @@ function nextInCourse(state: DrillState): AdvanceResult {
   return { cur, queue, pool: state.pool, stageId: state.stageId, rotIndex: state.rotIndex, courseCount: state.courseCount + 1 }
 }
 
-/** 次のコースへ進む（毎朝モード） */
+/** 次のコースへ進む（毎朝モード）。最後のコースより先には進まない前提で呼ぶ。 */
 function nextCourse(state: DrillState): AdvanceResult {
-  const rotIndex = (state.rotIndex + 1) % ROTATION_ORDER.length
+  const rotIndex = state.rotIndex + 1
   const stageId = ROTATION_ORDER[rotIndex]
   const pool = STAGES[stageId].items()
   const queue = refillQueue(pool, state.shuffleOn, stageId)
@@ -87,26 +87,26 @@ function nextCourse(state: DrillState): AdvanceResult {
   return { cur, queue, pool, stageId, rotIndex, courseCount: 0 }
 }
 
-/** 次の問題を決める。single は同コース無限、rotation は数問ごとにコースを巡回。 */
-function advance(state: DrillState): AdvanceResult {
-  if (state.mode !== 'rotation') return nextInCourse(state)
-  // 規定数こなした or 問題が尽きたら次コースへ
-  if (state.courseCount + 1 >= ROTATION_CHUNK || state.queue.length === 0) return nextCourse(state)
-  return nextInCourse(state)
-}
-
 function curStep(state: DrillState): Step | null {
   return state.cur ? state.cur.steps[state.si] : null
 }
 
-/** 1問完了時の共通処理。毎朝モードで上限に達したら自動停止する。 */
+/** 1問完了時の共通処理。毎朝モードは各コース均等に1パスし、最後の文章コースで自動停止（ループしない）。 */
 function finishItem(state: DrillState, base: Partial<DrillState>): DrillState {
   const completed = state.completed + 1
-  if (state.mode === 'rotation' && completed >= DAILY_LIMIT) {
-    return { ...state, ...base, si: 0, typed: '', completed, finished: true, stoppedAt: Date.now() }
+  const common = { ...state, ...base, si: 0, typed: '', completed }
+  if (state.mode === 'rotation') {
+    if (state.courseCount + 1 >= PER_COURSE) {
+      // このコース分が終わった
+      if (state.rotIndex >= ROTATION_ORDER.length - 1) {
+        // 最後のコース（文章）まで終えた → 終了
+        return { ...common, finished: true, stoppedAt: Date.now() }
+      }
+      return { ...common, ...nextCourse(state) }
+    }
+    return { ...common, ...nextInCourse(state) }
   }
-  const next = advance(state)
-  return { ...state, ...base, si: 0, typed: '', completed, ...next }
+  return { ...common, ...nextInCourse(state) }
 }
 
 function reducer(state: DrillState, action: Action): DrillState {

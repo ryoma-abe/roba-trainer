@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { DAILY_LIMIT, useDrill } from './hooks/useDrill'
-import { STAGES, STAGE_ORDER, type StageId } from './data/stages'
+import { DAILY_TOTAL, PER_COURSE, useDrill } from './hooks/useDrill'
+import { ROTATION_ORDER, STAGES, STAGE_ORDER, type StageId } from './data/stages'
 import { FCOL, FJP, charToPos, fingerOf } from './data/keyboard'
 import type { FingerCode } from './types'
 import { addRecord, clearRecords, loadRecords, type SessionRecord } from './data/records'
@@ -163,12 +163,12 @@ export default function App() {
           onClick={() => newSession(undefined, 'rotation')}
         >
           🌅 毎朝モード
-          <small>全コース巡回</small>
+          <small>順にステップ</small>
         </button>
       </div>
       <p className="desc">
         {isRotation
-          ? `毎朝モード：全コースを巡回し、合計 ${DAILY_LIMIT} 問で自動終了。今は「${STAGES[state.stageId].name}」（${Math.min(state.completed, DAILY_LIMIT)}/${DAILY_LIMIT} 問）。`
+          ? `毎朝モード：母音→…→文章を順にステップアップ（各コース ${PER_COURSE} 問・計 ${DAILY_TOTAL} 問で終了）。ステップ ${state.rotIndex + 1}/${ROTATION_ORDER.length}「${STAGES[state.stageId].name}」（${state.completed}/${DAILY_TOTAL} 問）。`
           : STAGES[state.stageId].desc}
       </p>
 
