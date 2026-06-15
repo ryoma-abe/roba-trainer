@@ -185,12 +185,22 @@ const symbolItems: Item[] = symbolList.map(([ch, pos]) => ({
   steps: [{ t: 'key', v: ch, show: ch, pos: [pos], mod: 38, hint: `Space 長押し + ${ch}` }],
 }))
 
-export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences' | 'shift' | 'symbols'
+// ショートカット（⌘ = 左親指 pos35 を押しながら文字）。ブラウザに奪われない安全なものだけ。
+const commandList: [string, string][] = [
+  ['コピー', 'c'], ['ペースト', 'v'], ['カット', 'x'], ['取り消し', 'z'],
+  ['全選択', 'a'], ['保存', 's'], ['検索', 'f'],
+]
+const commandItems: Item[] = commandList.map(([label, c]) => ({
+  kana: `⌘${c.toUpperCase()}　${label}`,
+  steps: [{ t: 'combo', v: `cmd+${c}`, show: `⌘${c.toUpperCase()}`, pos: [charToPos[c]], mod: 35, hint: `⌘（左親指）を押しながら ${c.toUpperCase()}` }],
+}))
 
-export const STAGE_ORDER: StageId[] = ['home', 'vowels', 'gojuon', 'words', 'shift', 'symbols', 'edit', 'arrows', 'clicks', 'sentences']
+export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences' | 'shift' | 'symbols' | 'commands'
 
-/** 毎朝モード（連続ローテーション）で自動的に巡回するコース順。ホームは除外。 */
-export const ROTATION_ORDER: StageId[] = ['vowels', 'gojuon', 'words', 'shift', 'symbols', 'edit', 'arrows', 'clicks', 'sentences']
+export const STAGE_ORDER: StageId[] = ['home', 'vowels', 'gojuon', 'words', 'shift', 'symbols', 'commands', 'edit', 'arrows', 'clicks', 'sentences']
+
+/** 毎朝モード（ステップアップ）で順に進むコース。ホームは除外、最後は文章。 */
+export const ROTATION_ORDER: StageId[] = ['vowels', 'gojuon', 'words', 'shift', 'symbols', 'commands', 'edit', 'arrows', 'clicks', 'sentences']
 
 export const STAGES: Record<StageId, Stage> = {
   home: {
@@ -237,6 +247,11 @@ export const STAGES: Record<StageId, Stage> = {
     name: '記号・数字', sub: '0-9 !@#',
     desc: '数字・記号。Space を長押し中の数字レイヤー。表示の記号を実機で打つと判定されます。',
     items: () => symbolItems.slice(),
+  },
+  commands: {
+    name: 'コマンド', sub: '⌘C ⌘V…',
+    desc: 'ショートカット。⌘（左親指）を押しながら文字。⌘C/V/X/Z/A/S/F を実機で打つと判定されます。',
+    items: () => commandItems.slice(),
   },
   sentences: {
     name: '文章', sub: '実戦',

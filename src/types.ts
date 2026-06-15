@@ -12,10 +12,10 @@ export interface KanaStep {
   romaji: string[]
 }
 
-/** 単キー操作（特殊キー・クリック）。1ストロークで判定。 */
+/** 単キー操作（特殊キー・クリック・ショートカット）。1ストロークで判定。 */
 export interface ActionStep {
-  t: 'key' | 'click'
-  /** 正解として比較する値（key: KeyboardEvent.key / click: ボタン種別） */
+  t: 'key' | 'click' | 'combo'
+  /** 正解として比較する値（key: KeyboardEvent.key / click: ボタン種別 / combo: "cmd+c" 形式） */
   v: string
   /** プロンプト上の表示文字 */
   show: string
@@ -39,6 +39,8 @@ export interface Token {
   char?: string
   key?: string
   click?: string
+  /** ショートカット（"cmd+c" 形式） */
+  combo?: string
 }
 
 export interface Stage {

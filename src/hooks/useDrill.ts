@@ -131,6 +131,9 @@ function reducer(state: DrillState, action: Action): DrillState {
       const tok = action.tok
       const miss = () => ({ ...state, errors: state.errors + 1, errFlash: state.errFlash + 1 })
 
+      // ショートカットは combo ステップ以外では無視（誤爆でミスにしない）
+      if (tok.combo !== undefined && s.t !== 'combo') return state
+
       // かなステップ：複数ローマ字候補のいずれかに前方一致すれば進行
       if (s.t === 'kana') {
         if (tok.char === undefined) return miss()
@@ -153,10 +156,11 @@ function reducer(state: DrillState, action: Action): DrillState {
         return { ...state, started, correct, si, typed: '' }
       }
 
-      // 単キー操作（特殊キー・クリック）
+      // 単キー操作（特殊キー・クリック・ショートカット）
       let ok = false
       if (s.t === 'key') ok = tok.key === s.v
       else if (s.t === 'click') ok = tok.click === s.v
+      else if (s.t === 'combo') ok = tok.combo === s.v
       if (!ok) return miss()
 
       const started = state.started ?? Date.now()
@@ -191,7 +195,19 @@ export function useDrill(initialStage: StageId) {
   // キー入力
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
+      // 修飾キー付き：ショートカット（修飾＋英字）のみ combo として送る
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        const key = e.key.toLowerCase()
+        if (/^[a-z]$/.test(key)) {
+          const parts: string[] = []
+          if (e.metaKey) parts.push('cmd')
+          if (e.ctrlKey) parts.push('ctrl')
+          if (e.altKey) parts.push('alt')
+          e.preventDefault()
+          sendToken({ combo: parts.join('+') + '+' + key })
+        }
+        return
+      }
       const k = e.key
       if (k.length === 1) {
         // 小文字 a-z, ' はかな入力（char）。大文字・数字・記号・スペースは単キー（key）。
