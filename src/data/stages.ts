@@ -167,7 +167,8 @@ const sentenceItems: Item[] = sentences.map((s) => ({
 }))
 
 // 大文字（Shift = z 長押し）。Shift を押しながら各文字。
-const shiftLetters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'z', 'x', 'c', 'v', 'b', 'n', 'm']
+// z は Shift キー自体（z 長押し）なので大文字 Z は打てない → 除外
+const shiftLetters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'x', 'c', 'v', 'b', 'n', 'm']
 const shiftItems: Item[] = shiftLetters.map((c) => {
   const up = c.toUpperCase()
   return { kana: up, steps: [{ t: 'key', v: up, show: up, pos: [charToPos[c]], mod: 22, hint: `Shift（z 長押し）+ ${up}` }] }
