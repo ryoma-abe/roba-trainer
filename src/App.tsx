@@ -5,6 +5,7 @@ import { FCOL, FJP, charToPos, fingerOf } from './data/keyboard'
 import type { FingerCode } from './types'
 import { addRecord, clearRecords, loadRecords, type SessionRecord } from './data/records'
 import { type GitHubConfig, isConfigured, loadConfig, saveConfig, syncRecords } from './data/github'
+import { clearWeak, loadWeak, mergeWeak, topWeak, type WeakStat } from './data/weakness'
 import { Board } from './components/Board'
 import { FingerGuide } from './components/FingerGuide'
 import { Stats } from './components/Stats'
@@ -25,6 +26,16 @@ export default function App() {
 
   // 成績記録
   const [records, setRecords] = useState<SessionRecord[]>(() => loadRecords())
+
+  // 苦手集計
+  const [weak, setWeak] = useState<WeakStat>(() => loadWeak())
+  const weakRanks = useMemo(() => topWeak(weak, 8), [weak])
+
+  // 表示トグル（ブラインド練習）
+  const [hideFingers, setHideFingers] = useState(() => localStorage.getItem('roba-trainer:hideFingers') === '1')
+  const [hideBoard, setHideBoard] = useState(() => localStorage.getItem('roba-trainer:hideBoard') === '1')
+  useEffect(() => { localStorage.setItem('roba-trainer:hideFingers', hideFingers ? '1' : '0') }, [hideFingers])
+  useEffect(() => { localStorage.setItem('roba-trainer:hideBoard', hideBoard ? '1' : '0') }, [hideBoard])
 
   // GitHub リポジトリ連携
   const [ghConfig, setGhConfig] = useState<GitHubConfig>(() => loadConfig())
@@ -125,14 +136,17 @@ export default function App() {
       seconds: sec,
     })
     setRecords(next)
+    setWeak(mergeWeak(state.weak))
     // 連携済みなら成績をリポジトリへ自動コミット
     if (isConfigured(ghConfig)) void doSync(next)
   }, [state.finished, state.started, state.stoppedAt, state.completed, state.correct, state.errors, state.mode, state.stageId])
 
   function handleClearRecords() {
-    if (!window.confirm('成績の記録をすべて消去します。よろしいですか？')) return
+    if (!window.confirm('成績・苦手の記録をすべて消去します。よろしいですか？')) return
     clearRecords()
+    clearWeak()
     setRecords([])
+    setWeak({})
   }
 
   const isRotation = state.mode === 'rotation'
@@ -193,24 +207,28 @@ export default function App() {
         />
       ) : null}
 
-      <FingerGuide active={view.finger} held={view.heldFinger} />
+      {hideFingers ? null : <FingerGuide active={view.finger} held={view.heldFinger} />}
 
-      <div className="board-wrap">
-        <Board mode="drill" scale={0.86} nextPos={view.nextPos} heldPos={view.heldPos} layerKey={autoLayer} />
-      </div>
-      <div className="handlabel-row" style={{ maxWidth: 660, margin: '4px auto 0', width: '100%' }}>
-        <span>左 / エンコーダ側</span>
-        <span>右 / トラックボール側</span>
-      </div>
+      {hideBoard ? null : (
+        <>
+          <div className="board-wrap">
+            <Board mode="drill" scale={0.86} nextPos={view.nextPos} heldPos={view.heldPos} layerKey={autoLayer} />
+          </div>
+          <div className="handlabel-row" style={{ maxWidth: 660, margin: '4px auto 0', width: '100%' }}>
+            <span>左 / エンコーダ側</span>
+            <span>右 / トラックボール側</span>
+          </div>
 
-      <div className="legend">
-        {LEGEND_FINGERS.map((f) => (
-          <span key={f}>
-            <i className="dot" style={{ background: FCOL[f] }} />
-            {f === 'LT' ? '親指' : FJP[f]}
-          </span>
-        ))}
-      </div>
+          <div className="legend">
+            {LEGEND_FINGERS.map((f) => (
+              <span key={f}>
+                <i className="dot" style={{ background: FCOL[f] }} />
+                {f === 'LT' ? '親指' : FJP[f]}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="bar">
         <button className="btn stop" onClick={stop}>やめる</button>
@@ -218,6 +236,14 @@ export default function App() {
         <label className="chk">
           <input type="checkbox" checked={state.shuffleOn} onChange={(e) => setShuffle(e.target.checked)} />
           ランダム順
+        </label>
+        <label className="chk">
+          <input type="checkbox" checked={hideFingers} onChange={(e) => setHideFingers(e.target.checked)} />
+          指を隠す
+        </label>
+        <label className="chk">
+          <input type="checkbox" checked={hideBoard} onChange={(e) => setHideBoard(e.target.checked)} />
+          盤面を隠す
         </label>
         <span className="sub" style={{ marginLeft: 'auto' }}>
           {state.finished ? '「最初から」で再開' : state.started ? 'やめるまで続きます' : '操作すると開始'}
@@ -229,6 +255,7 @@ export default function App() {
       <div id="history">
         <History
           records={records}
+          weakRanks={weakRanks}
           onClear={handleClearRecords}
           ghConfig={ghConfig}
           onSaveGhConfig={handleSaveGhConfig}

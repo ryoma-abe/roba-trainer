@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react'
 import type { SessionRecord } from '../data/records'
 import { currentStreak } from '../data/records'
 import { type GitHubConfig, isConfigured } from '../data/github'
+import type { WeakRank } from '../data/weakness'
 
 interface Props {
   records: SessionRecord[]
+  weakRanks: WeakRank[]
   onClear: () => void
   ghConfig: GitHubConfig
   onSaveGhConfig: (cfg: GitHubConfig) => void
@@ -40,7 +42,7 @@ function Sparkline({ values, color, max }: { values: number[]; color: string; ma
   )
 }
 
-export function History({ records, onClear, ghConfig, onSaveGhConfig, onSyncNow, syncStatus }: Props) {
+export function History({ records, weakRanks, onClear, ghConfig, onSaveGhConfig, onSyncNow, syncStatus }: Props) {
   const recent = useMemo(() => records.slice(-30), [records])
   const accVals = recent.map((r) => r.accuracy)
   const cpmVals = recent.map((r) => r.cpm)
@@ -103,6 +105,22 @@ export function History({ records, onClear, ghConfig, onSaveGhConfig, onSyncNow,
           </div>
         </>
       )}
+
+      {weakRanks.length > 0 ? (
+        <>
+          <div className="section-title"><span className="bar-i" />苦手な文字</div>
+          <p className="desc">ミス率の高い順。「苦手克服」コースでこれらを集中的に練習できます。</p>
+          <div className="weak-list">
+            {weakRanks.map((w) => (
+              <div className="weak-chip" key={w.key}>
+                <span className="weak-key">{w.key === ' ' ? '␣' : w.key}</span>
+                <span className="weak-rate">{Math.round(w.rate * 100)}%</span>
+                <span className="weak-sub">{w.miss}/{w.total} ミス</span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
 
       <GitHubPanel ghConfig={ghConfig} onSave={onSaveGhConfig} onSyncNow={onSyncNow} syncStatus={syncStatus} />
     </>

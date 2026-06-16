@@ -1,6 +1,7 @@
 import type { Item, Stage, Step } from '../types'
 import { tokenizeKana } from './romaji'
 import { charToPos } from './keyboard'
+import { loadWeak, topWeak } from './weakness'
 
 /** かな文字列を入力ステップ列へ。複数のローマ字表記を許容する。 */
 export function kanaSteps(kana: string): Step[] {
@@ -196,9 +197,9 @@ const commandItems: Item[] = commandList.map(([label, c]) => ({
   steps: [{ t: 'combo', v: `cmd+${c}`, show: `⌘${c.toUpperCase()}`, pos: [charToPos[c]], mod: 35, hint: `⌘（左薬指）を押しながら ${c.toUpperCase()}` }],
 }))
 
-export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences' | 'shift' | 'symbols' | 'commands'
+export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences' | 'shift' | 'symbols' | 'commands' | 'weak'
 
-export const STAGE_ORDER: StageId[] = ['home', 'vowels', 'gojuon', 'words', 'shift', 'symbols', 'commands', 'edit', 'arrows', 'clicks', 'sentences']
+export const STAGE_ORDER: StageId[] = ['home', 'vowels', 'gojuon', 'words', 'shift', 'symbols', 'commands', 'edit', 'arrows', 'clicks', 'sentences', 'weak']
 
 /** 毎朝モード（ステップアップ）で順に進むコース。ホームは除外、最後は文章。 */
 export const ROTATION_ORDER: StageId[] = ['vowels', 'gojuon', 'words', 'shift', 'symbols', 'commands', 'edit', 'arrows', 'clicks', 'sentences']
@@ -258,5 +259,14 @@ export const STAGES: Record<StageId, Stage> = {
     name: '文章', sub: '実戦',
     desc: '文章。ローマ字で打って最後に Enter。スペースも親指で。',
     items: () => sentenceItems.slice(),
+  },
+  weak: {
+    name: '苦手克服', sub: 'ミスの多い字',
+    desc: '苦手克服。これまでミスの多かった文字を集中的に出題します。記録がたまるほど精度が上がります。',
+    items: () => {
+      const ranks = topWeak(loadWeak(), 12, { onlyChars: true })
+      if (!ranks.length) return vowels.map((v) => ({ kana: v[0], steps: kanaSteps(v[0]) }))
+      return ranks.map((r) => ({ kana: '', steps: [{ t: 'kana', display: r.key, romaji: [r.key] } as Step] }))
+    },
   },
 }
