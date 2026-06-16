@@ -39,8 +39,9 @@ const FINGER_MAP: Record<number, FingerCode> = {
   7: 'RM', 19: 'RM', 31: 'RM',
   8: 'RR', 20: 'RR', 32: 'RR',
   9: 'RP', 21: 'RP', 33: 'RP',
-  34: 'LT', 35: 'LT', 36: 'LT', 37: 'LT', 38: 'LT', 39: 'LT',
-  40: 'RT', 41: 'RT', 42: 'RT',
+  // 最下段：Ctrl/⌘/Alt は各列の指で押す。中央クラスター（変換/Space/無変換/⌫/⏎）が親指。
+  34: 'LP', 35: 'LR', 36: 'LM', 37: 'LT', 38: 'LT', 39: 'LT',
+  40: 'RT', 41: 'RT', 42: 'RP',
 }
 
 export function fingerOf(pos: number): FingerCode | undefined {

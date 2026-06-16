@@ -193,7 +193,7 @@ const commandList: [string, string][] = [
 ]
 const commandItems: Item[] = commandList.map(([label, c]) => ({
   kana: `⌘${c.toUpperCase()}　${label}`,
-  steps: [{ t: 'combo', v: `cmd+${c}`, show: `⌘${c.toUpperCase()}`, pos: [charToPos[c]], mod: 35, hint: `⌘（左親指）を押しながら ${c.toUpperCase()}` }],
+  steps: [{ t: 'combo', v: `cmd+${c}`, show: `⌘${c.toUpperCase()}`, pos: [charToPos[c]], mod: 35, hint: `⌘（左薬指）を押しながら ${c.toUpperCase()}` }],
 }))
 
 export type StageId = 'home' | 'vowels' | 'gojuon' | 'words' | 'edit' | 'arrows' | 'clicks' | 'sentences' | 'shift' | 'symbols' | 'commands'
@@ -251,7 +251,7 @@ export const STAGES: Record<StageId, Stage> = {
   },
   commands: {
     name: 'コマンド', sub: '⌘C ⌘V…',
-    desc: 'ショートカット。⌘（左親指）を押しながら文字。⌘C/V/X/Z/A/S/F を実機で打つと判定されます。',
+    desc: 'ショートカット。⌘（左薬指）を押しながら文字。⌘C/V/X/Z/A/S/F を実機で打つと判定されます。',
     items: () => commandItems.slice(),
   },
   sentences: {
