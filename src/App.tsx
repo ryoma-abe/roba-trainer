@@ -75,7 +75,7 @@ export default function App() {
 
   // 現在ステップ＋入力途中から、次に押すキー・指・ヒントを導出
   const view = useMemo(() => {
-    const empty = { nextPos: [] as number[], heldPos: null as number | null, finger: null as FingerCode | null, hint: '' }
+    const empty = { nextPos: [] as number[], heldPos: null as number | null, finger: null as FingerCode | null, heldFinger: null as FingerCode | null, hint: '' }
     const s = currentStep
     if (!s || state.finished) return empty
     if (s.t === 'kana') {
@@ -83,10 +83,11 @@ export default function App() {
       const ch = repr[state.typed.length]
       const p = ch !== undefined ? charToPos[ch] : undefined
       if (p === undefined) return empty
-      return { nextPos: [p], heldPos: null, finger: fingerOf(p) ?? null, hint: '' }
+      return { ...empty, nextPos: [p], finger: fingerOf(p) ?? null }
     }
     const last = s.pos[s.pos.length - 1]
-    return { nextPos: s.pos, heldPos: s.mod ?? null, finger: fingerOf(last) ?? null, hint: s.hint ?? '' }
+    const heldFinger = s.mod !== undefined ? fingerOf(s.mod) ?? null : null
+    return { nextPos: s.pos, heldPos: s.mod ?? null, finger: fingerOf(last) ?? null, heldFinger, hint: s.hint ?? '' }
   }, [currentStep, state.typed, state.finished])
 
   // 現在ステップが要求するレイヤー（自動追従の対象）
@@ -192,7 +193,7 @@ export default function App() {
         />
       ) : null}
 
-      <FingerGuide active={view.finger} />
+      <FingerGuide active={view.finger} held={view.heldFinger} />
 
       <div className="board-wrap">
         <Board mode="drill" scale={0.86} nextPos={view.nextPos} heldPos={view.heldPos} layerKey={autoLayer} />

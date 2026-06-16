@@ -17,19 +17,21 @@ const FGR_GEOM: Record<string, { x: number; y: number; w: number; h: number; r?:
 
 interface Props {
   active: FingerCode | null
+  /** 押しながら保持する指（修飾キー：⌘・Shift・無変換 など） */
+  held?: FingerCode | null
 }
 
-export function FingerGuide({ active }: Props) {
+export function FingerGuide({ active, held = null }: Props) {
   return (
     <div className="finger-guide">
       <svg viewBox="0 0 380 172" width="290" height="131" aria-hidden="true">
         <rect className="palm" x="26" y="104" width="100" height="46" rx="14" />
         {(['LP', 'LR', 'LM', 'LI', 'LT'] as FingerCode[]).map((f) => (
-          <FingerRect key={f} code={f} active={active === f} />
+          <FingerRect key={f} code={f} active={active === f} held={held === f} />
         ))}
         <rect className="palm" x="254" y="104" width="100" height="46" rx="14" />
         {(['RI', 'RM', 'RR', 'RP', 'RT'] as FingerCode[]).map((f) => (
-          <FingerRect key={f} code={f} active={active === f} />
+          <FingerRect key={f} code={f} active={active === f} held={held === f} />
         ))}
       </svg>
       <div className="finger-name">
@@ -39,14 +41,18 @@ export function FingerGuide({ active }: Props) {
           <span style={{ color: 'var(--dim)' }}>—</span>
         )}
         <small>使う指</small>
+        {held ? (
+          <small style={{ color: FCOL[held] }}>＋ {FJP[held]}で押さえる</small>
+        ) : null}
       </div>
     </div>
   )
 }
 
-function FingerRect({ code, active }: { code: FingerCode; active: boolean }) {
+function FingerRect({ code, active, held }: { code: FingerCode; active: boolean; held: boolean }) {
   const g = FGR_GEOM[code]
-  const style: CSSProperties = active ? { filter: `drop-shadow(0 0 6px ${FCOL[code]})` } : { filter: 'none' }
+  const lit = active || held
+  const style: CSSProperties = lit ? { filter: `drop-shadow(0 0 6px ${FCOL[code]})` } : { filter: 'none' }
   return (
     <rect
       className="fgr"
@@ -56,8 +62,9 @@ function FingerRect({ code, active }: { code: FingerCode; active: boolean }) {
       height={g.h}
       rx={9}
       transform={g.r ? `rotate(${g.r} ${g.cx} ${g.cy})` : undefined}
-      fill={active ? FCOL[code] : '#222a35'}
-      stroke={active ? '#fff' : '#3a4350'}
+      fill={active ? FCOL[code] : held ? `color-mix(in srgb, ${FCOL[code]} 30%, #222a35)` : '#222a35'}
+      stroke={active ? '#fff' : held ? FCOL[code] : '#3a4350'}
+      strokeDasharray={held && !active ? '4 3' : undefined}
       style={style}
     />
   )
