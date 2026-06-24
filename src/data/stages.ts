@@ -138,6 +138,56 @@ const sentences: [string, string][] = [
   ['ねむくなってきた', 'nemuku natte kita'],
   ['そろそろねよう', 'sorosoro neyou'],
   ['またあした', 'mata ashita'],
+  ['めもをとる', 'memo wo toru'],
+  ['よていをかくにん', 'yotei wo kakuninn'],
+  ['かいぎがはじまる', 'kaigi ga hajimaru'],
+  ['しめきりにまにあう', 'shimekiri ni maniau'],
+  ['ほぞんをわすれた', 'hozonn wo wasureta'],
+  ['しごとをおえる', 'shigoto wo oeru'],
+  ['やすみをとる', 'yasumi wo toru'],
+  ['えきまであるく', 'eki made aruku'],
+  ['でんしゃがおくれた', 'dennsha ga okureta'],
+  ['あめがやんだ', 'ame ga yannda'],
+  ['そらがあかるい', 'sora ga akarui'],
+  ['かぜがつめたい', 'kaze ga tsumetai'],
+  ['はるがちかい', 'haru ga chikai'],
+  ['よるがふけた', 'yoru ga fuketa'],
+  ['ほしがきれい', 'hoshi ga kirei'],
+  ['つきがでている', 'tsuki ga deteiru'],
+  ['とりがないている', 'tori ga naiteiru'],
+  ['はなみにいく', 'hanami ni iku'],
+  ['うみがみたい', 'umi ga mitai'],
+  ['やまにのぼる', 'yama ni noboru'],
+  ['みずをのむ', 'mizu wo nomu'],
+  ['ちゃをいれる', 'cha wo ireru'],
+  ['ぱんをやく', 'pann wo yaku'],
+  ['たまごをわる', 'tamago wo waru'],
+  ['やさいをきる', 'yasai wo kiru'],
+  ['にくをやく', 'niku wo yaku'],
+  ['さかなをやく', 'sakana wo yaku'],
+  ['ごはんをつくる', 'gohann wo tsukuru'],
+  ['おさらをあらう', 'osara wo arau'],
+  ['へやをそうじする', 'heya wo soujisuru'],
+  ['ふくをきがえる', 'fuku wo kigaeru'],
+  ['くつをはく', 'kutsu wo haku'],
+  ['かばんをもつ', 'kabann wo motsu'],
+  ['ほんをよむ', 'honn wo yomu'],
+  ['おんがくをきく', 'onngaku wo kiku'],
+  ['えをかく', 'e wo kaku'],
+  ['うたをうたう', 'uta wo utau'],
+  ['はしをわたる', 'hashi wo wataru'],
+  ['しんごうをまつ', 'shinngou wo matsu'],
+  ['くるまにのる', 'kuruma ni noru'],
+  ['じてんしゃをこぐ', 'jitennsha wo kogu'],
+  ['かいだんをのぼる', 'kaidann wo noboru'],
+  ['どあをあける', 'doa wo akeru'],
+  ['まどをしめる', 'mado wo shimeru'],
+  ['でんきをけす', 'dennki wo kesu'],
+  ['かぎをかける', 'kagi wo kakeru'],
+  ['てがみをおくる', 'tegami wo okuru'],
+  ['みちをあるく', 'michi wo aruku'],
+  ['ともだちにあう', 'tomodachi ni au'],
+  ['ありがとうとつたえる', 'arigatou to tsutaeru'],
 ]
 
 const editItems: Item[] = [
@@ -182,10 +232,25 @@ const symbolList: [string, number][] = [
   ['-', 0], ['+', 4], ['*', 14], ['/', 10], ['=', 27], ['.', 26], ['_', 16],
   ['[', 29], [']', 30], ['{', 31], ['}', 32],
 ]
-const symbolItems: Item[] = symbolList.map(([ch, pos]) => ({
-  kana: ch,
-  steps: [{ t: 'key', v: ch, show: ch, pos: [pos], mod: 38, hint: `Space 長押し + ${ch}` }],
+const SYM_POS: Record<string, number> = {}
+symbolList.forEach(([ch, pos]) => { SYM_POS[ch] = pos })
+
+// 数字列・記号列（実戦的な複合入力）
+const symbolSeqs = [
+  '12', '123', '2024', '2025', '100', '365', '0120', '1000', '99', '3.14',
+  '()', '[]', '{}', '//', '**', '--', '==', '##', '@@', '!!', '&&', '++', '__',
+]
+const symbolSeqItems: Item[] = symbolSeqs.map((seq) => ({
+  kana: seq,
+  steps: seq.split('').map((ch) => ({ t: 'key', v: ch, show: ch, pos: [SYM_POS[ch]], mod: 38, hint: `Space 長押し + ${ch}` } as Step)),
 }))
+
+const symbolItems: Item[] = symbolList
+  .map(([ch, pos]) => ({
+    kana: ch,
+    steps: [{ t: 'key', v: ch, show: ch, pos: [pos], mod: 38, hint: `Space 長押し + ${ch}` } as Step],
+  }))
+  .concat(symbolSeqItems)
 
 // ショートカット（⌘ = 左親指 pos35 を押しながら文字）。ブラウザに奪われない安全なものだけ。
 const commandList: [string, string][] = [
