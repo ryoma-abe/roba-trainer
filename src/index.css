@@ -551,6 +551,39 @@ label.chk {
   background: color-mix(in srgb, var(--accent) 12%, var(--panel));
 }
 
+.combo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.combo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.combo-keys {
+  font-family: var(--mono);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 4px 10px;
+  min-width: 76px;
+  text-align: center;
+  color: var(--accent);
+}
+
+.combo-arrow {
+  color: var(--dim);
+}
+
+.combo-result {
+  color: var(--ink);
+}
+
 .weak-list {
   display: flex;
   flex-wrap: wrap;

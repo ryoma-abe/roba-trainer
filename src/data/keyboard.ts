@@ -66,6 +66,19 @@ export const charToPos: Record<string, number> = (() => {
   return m
 })()
 
+/** コンボ（2キー同時押し）。実機 keymap の combos に対応。 */
+export interface Combo {
+  combo: string
+  result: string
+}
+export const COMBOS: Combo[] = [
+  { combo: 'S + D', result: 'Tab' },
+  { combo: 'D + F', result: 'Shift + Tab' },
+  { combo: "L + '", result: '"（ダブルクォート）' },
+  { combo: 'C + V', result: '=（イコール）' },
+  { combo: 'A + S', result: '無変換（ベースレイヤーに戻る）' },
+]
+
 export const LAYERS: Record<string, Layer> = {
   base: {
     name: 'ベース',

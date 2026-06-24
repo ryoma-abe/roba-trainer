@@ -1,4 +1,4 @@
-import { LAYERS } from '../data/keyboard'
+import { COMBOS, LAYERS } from '../data/keyboard'
 import { Board } from './Board'
 
 interface Props {
@@ -43,6 +43,17 @@ export function Keymap({ layerKey, onSelect, autoFollowing }: Props) {
             Enter は右親指のキー（黄色枠）。⌫(Backspace)の隣で、回転して並ぶ親指キーの一番内側。長押しでF系レイヤー。
           </span>
         ) : null}
+      </div>
+
+      <div className="section-title"><span className="bar-i" />コンボ（2キー同時押し）</div>
+      <div className="combo-list">
+        {COMBOS.map((c) => (
+          <div className="combo-row" key={c.combo}>
+            <span className="combo-keys">{c.combo}</span>
+            <span className="combo-arrow">→</span>
+            <span className="combo-result">{c.result}</span>
+          </div>
+        ))}
       </div>
     </>
   )
