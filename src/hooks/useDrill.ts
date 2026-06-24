@@ -230,8 +230,7 @@ export function useDrill(initialStage: StageId) {
         sendToken({ key: k })
         return
       }
-      if (k === 'Tab') { e.preventDefault(); return }
-      const sp = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Enter', 'Delete', 'Home', 'End', 'Escape']
+      const sp = ['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Enter', 'Delete', 'Home', 'End', 'Escape']
       if (sp.indexOf(k) >= 0) { e.preventDefault(); sendToken({ key: k }) }
     }
     document.addEventListener('keydown', onKeyDown)

@@ -193,7 +193,7 @@ const sentences: [string, string][] = [
 const editItems: Item[] = [
   { kana: '⌫ Backspace', steps: [{ t: 'key', v: 'Backspace', show: '⌫', pos: [40], hint: '右の親指キー（⌫）' }] },
   { kana: '⏎ Enter', steps: [{ t: 'key', v: 'Enter', show: '⏎', pos: [41], hint: '右の親指キー（内側）' }] },
-  { kana: 'Delete', steps: [{ t: 'key', v: 'Delete', show: 'Del', pos: [42], hint: '右下のいちばん外側' }] },
+  { kana: 'Tab', steps: [{ t: 'key', v: 'Tab', show: 'Tab', pos: [42], hint: '右下のいちばん外側' }] },
 ]
 
 const arrowItems: Item[] = [
@@ -291,8 +291,8 @@ export const STAGES: Record<StageId, Stage> = {
     items: () => lex(words),
   },
   edit: {
-    name: '編集', sub: '⌫ ⏎ Del',
-    desc: '編集キー。⌫=Backspace、⏎=Enter、Del。すべて右の親指まわり。実機で押すと判定されます。',
+    name: '編集', sub: '⌫ ⏎ Tab',
+    desc: '編集キー。⌫=Backspace、⏎=Enter、Tab。すべて右の親指まわり。実機で押すと判定されます。',
     items: () => editItems.slice(),
   },
   arrows: {
